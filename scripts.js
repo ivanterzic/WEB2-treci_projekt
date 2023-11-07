@@ -1,5 +1,5 @@
-const playerWidth = 40;
-const playerHeight = 40;
+const playerSize = 40;
+const starSize = 3;
 
 // definicija varijabli za pojedine elemente
 // varijabla za igrača
@@ -49,14 +49,11 @@ const asteroidsGame = {
     }
 }
 
-// opet po uzoru na engine s predavanja, definiram komponente za pojedini element igre
-
 // ovo je komponenta samog igrača, preiuzeto s predavanja
-function playerComponent(width, height, color, x, y, type) {
+function playerComponent(size, color, x, y, type) {
     // definiram varijable za komponentu, tip, dimenzije, boja, pozicija, brzina
     this.type = type;
-    this.width = width;
-    this.height = height;
+    this.size = size;
     this.speed_x = 0;
     this.speed_y = 0;
     this.x = x;
@@ -71,7 +68,7 @@ function playerComponent(width, height, color, x, y, type) {
         ctx.translate(this.x, this.y);
         ctx.fillStyle = color;
         // popunjavam pravookutnik bojom, stavljam x koordinatu, y koordinatu, širinu i visinu
-        ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
+        ctx.fillRect(this.size / -2, this.size / -2, this.size, this.size);
         ctx.restore();
     }
     // funkcija za postavljanje nove pozicije
@@ -113,11 +110,11 @@ function playerComponent(width, height, color, x, y, type) {
         // ako nije, dozvoljavam mu da se kreće
         // logika iza uvjeta -> ako je njegov x položaj + brzina po x osi veći od 0 i manji od širine canvasa - širine igrača, dozvoljavam mu da se kreće po x osi
         // polovice player width i player height su u uvjetu jer inače mu polovica igrača može izaći izvan canvasa
-        if (this.x + this.speed_x > this.width / 2 && this.x + this.speed_x < asteroidsGame.canvas.width - this.width / 2) {
+        if (this.x + this.speed_x > this.size / 2 && this.x + this.speed_x < asteroidsGame.canvas.width - this.size / 2) {
             this.x += this.speed_x;
         }
         // ako je njegov y položaj + brzina po y osi veći od 0 i manji od visine canvasa - visine igrača, dozvoljavam mu da se kreće po y osi
-        if (this.y + this.speed_y > this.height / 2 && this.y + this.speed_y < asteroidsGame.canvas.height - this.height / 2) {
+        if (this.y + this.speed_y > this.size / 2 && this.y + this.speed_y < asteroidsGame.canvas.height - this.size / 2) {
             this.y += this.speed_y;
         }
 
@@ -125,10 +122,9 @@ function playerComponent(width, height, color, x, y, type) {
 }
 
 // po uzoru na predavanje radim komponente za zvijezde u pozadini, razdvojio sam u posebnu funkciju
-function starComponent(width, height, x, y) {
+function starComponent(size, x, y) {
     //definiram elemente za zvijezdu, dimenzije, boju, poziciju
-    this.width = width;
-    this.height = height;
+    this.size = size;
     // boja je bijela s poluprozirnošću 0.2, tako mi ljepše izgleda
     this.color = "rgba(255, 255, 255, 0.2)";
     this.x = x;
@@ -139,12 +135,12 @@ function starComponent(width, height, x, y) {
         //bojam pravokutnik
         ctx.fillStyle = this.color;
         // iscrtavam pravokutnik na poziciji x, y, širine i visine
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.fillRect(this.x, this.y, this.size, this.size);
     }
     // funkcija za postavljanje nove pozicije, računa se na način da se y koordinata povećava za 0.5, tj. da se zvijezde spuštaju prema dolje
     this.newPos = function () {
         // ako zvijrzda dođe do dna canvasa, vraćam ju na vrh
-        if (this.y + this.height > asteroidsGame.canvas.height) {
+        if (this.y + this.size > asteroidsGame.canvas.height) {
             this.y = 0;
         } else {
             // inače se nastavlja kretati konstantnom brzinom prema dolje
@@ -167,19 +163,24 @@ function updateGameArea() {
     // analogno za igrača
     playerPiece.newPos();
     playerPiece.update();
+    // analogno za asteroide
+    for (var i = 0; i < asteroids.length; i++) {
+        asteroids[i].newPos();
+        asteroids[i].update();
+    }
 }
 
 // funkcija za pokretanje igre
 // pokreće se onload body elementa u HTML dokumentu
 function startGame() {
     // kreiram zvijezde u pozadini, 1500 komada
-    for (var i = 0; i < 1500; i++) {
+    for (var i = 0; i < 1000; i++) {
         //pozicije zviježda su random, širina i visina su 3px, to mi je najbolje izgledalo
         // random pozicije kako je zadano i onda se u tom patternu zvijezde ponavljaju kad izađu iz canvasa
-        stars.push(new starComponent(3, 3, Math.floor(Math.random() * window.innerWidth), Math.floor(Math.random() * window.innerHeight)));
+        stars.push(new starComponent(starSize, Math.floor(Math.random() * window.innerWidth), Math.floor(Math.random() * window.innerHeight)));
     }
     // pokrećem igru, tj. kreiram canvas i tu se onda definiraju i event listeneri i context i sl.
     asteroidsGame.start();
     // kreiram igrača, pozicioniram ga na sredinu canvasa kako je zadano
-    playerPiece = new playerComponent(playerWidth, playerHeight, "red", asteroidsGame.canvas.width / 2 - playerWidth, asteroidsGame.canvas.height / 2 - playerHeight, "player");
+    playerPiece = new playerComponent(playerSize, "red", asteroidsGame.canvas.width / 2 - playerSize / 2, asteroidsGame.canvas.height / 2 - playerSize / 2, "player");
 }
