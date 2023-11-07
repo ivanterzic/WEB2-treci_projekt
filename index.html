@@ -1,0 +1,30 @@
+<!-- Obavezno kod HTML5 dokumenata! -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asteroids Igra</title>
+        <script src="scripts.js"></script>
+        <style>
+            /* CSS za canvas */
+            /* koristim box-sizing property da bih mogao da postavim width i height na 100vw i 100vh, a da nemam scroll, tj da margine samog canvasa ne idu izvan veličine ekrana */
+            canvas {
+                /* crna pozadinska boja kako bih mogao postaviti border i prikazati zvijezde na pozadini */
+                background-color: black;
+                border: 5px solid white;
+                box-sizing: border-box; 
+                position: absolute;
+                /*top i left allignment kako bi canvas bio centriran */
+                top: 0;
+                left: 0;
+                /* width i height 100vw i 100vh kako bi canvas bio veličine ekrana */
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body id = "body" onload="startGame()">
+        <!-- canvas element, tu će se sve odigrati, pokriva cijeli prostor preglednika te mi onda ništa osim njega ni ne treba -->
+        <!-- JavaScript datoteka, nužno je staviti nakon canvasa, inače mi nije radilo-->
+        
+    </body>
+</html>
