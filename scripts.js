@@ -149,6 +149,68 @@ function starComponent(size, x, y) {
     }
 }
 
+// funkcija za asteroid
+function asteroidComponent(size, color, x, y, speed_x, speed_y) {
+    // definiram varijable za asteroid, dimenzije, boja, pozicija, brzina
+    this.width = size;
+    this.height = size;
+    this.color = color;
+    this.speed_x = speed_x;
+    this.speed_y = speed_y;
+    this.speed_x2 = 0;
+    this.speed_y2 = 0;
+    this.x = x;
+    this.y = y;
+    // funkcija za update asteroida
+    // funkcija se poziva kod svakog refresha canvasa i osvježava poziciju asteroida
+    this.update = function () {
+        // dohvaćam kontekst canvasa
+        ctx = asteroidsGame.context;
+        ctx.save();
+        // translatiram kontekst canvasa na poziciju asteroida
+        ctx.translate(this.x, this.y);
+        // crtam asteroid kao pravokutnik
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
+        // dodajem 3D sjenku oko ruba asteroida
+        ctx.restore();
+    }
+    // funkcija za postavljanje nove pozicije asteroida
+    this.newPos = function () {
+        // pomicanje asteroida po x i y osi
+        this.x += this.speed_x + this.speed_x2;
+        this.y += this.speed_y + this.speed_y2;
+        // ako asteroid izađe izvan canvasa, vraćam ga na početak
+        if (this.x < -this.width - 300 || this.y < -this.height - 300 || this.x > asteroidsGame.canvas.width + this.width + 300 || this.y > asteroidsGame.canvas.height + this.height + 300) {
+            // generiram random smjer kretanja asteroida
+            var direction = Math.floor(Math.random() * 4);
+            if (direction === 0) { // lijevo
+                this.x = asteroidsGame.canvas.width + this.width;
+                this.y = Math.floor(Math.random() * asteroidsGame.canvas.height);
+                this.speed_x = -Math.floor(Math.random() * 5) - 1;
+                this.speed_y = Math.floor(Math.random() * 11) - 5;
+            } else if (direction === 1) { // gore
+                this.x = Math.floor(Math.random() * asteroidsGame.canvas.width);
+                this.y = -this.height;
+                this.speed_x = Math.floor(Math.random() * 11) - 5;
+                this.speed_y = -Math.floor(Math.random() * 5) - 1;
+            } else if (direction === 2) { // desno
+                this.x = -this.width;
+                this.y = Math.floor(Math.random() * asteroidsGame.canvas.height);
+                this.speed_x = Math.floor(Math.random() * 5) + 1;
+                this.speed_y = Math.floor(Math.random() * 11) - 5;
+            } else { // dolje
+                this.x = Math.floor(Math.random() * asteroidsGame.canvas.width);
+                this.y = asteroidsGame.canvas.height + this.height;
+                this.speed_x = Math.floor(Math.random() * 11) - 5;
+                this.speed_y = Math.floor(Math.random() * 5) + 1;
+            }
+            this.speed_x2 += 0.01;
+            this.speed_y2 += 0.01;
+        }
+    }
+}
+
 
 //ova funkcija za update canvasa se poziva svakih 5 milisekundi
 function updateGameArea() {
@@ -170,17 +232,50 @@ function updateGameArea() {
     }
 }
 
+function createSingleAsteroid() {
+    // pozicije asteroida su random, širina i visina su 40px
+    // brzina asteroida je random, ali je ograničena na -2, -1, 0, 1, 2
+    // tako da asteroidi ne idu previše brzo i da ne idu previše sporo
+    // asteroidi se generiraju izvan vidljivog područja Canvasa
+    var direction = Math.floor(Math.random() * 4);
+    // https://www.w3schools.com/colors/colors_shades.asp
+    var randomShadeOfGrey = Math.floor(Math.random() * 220) + 48;
+    randomShadeOfGrey = "rgb(" + randomShadeOfGrey + ", " + randomShadeOfGrey + ", " + randomShadeOfGrey + ")";
+    if (direction === 0) { // lijevo
+        asteroids.push(new asteroidComponent(Math.floor(Math.random() * 21) + 20, randomShadeOfGrey, asteroidsGame.canvas.width + 200, Math.floor(Math.random() * asteroidsGame.canvas.height), Math.floor(Math.random() * 5) - 2, Math.floor(Math.random() * 5) + 1));
+    } else if (direction === 1) { // gore
+        asteroids.push(new asteroidComponent(Math.floor(Math.random() * 21) + 20, randomShadeOfGrey, Math.floor(Math.random() * asteroidsGame.canvas.width),  asteroidsGame.canvas.height + 200, Math.floor(Math.random() * 11) - 5, -Math.floor(Math.random() * 5) - 1));
+    } else if (direction === 2) { // desno
+        asteroids.push(new asteroidComponent(Math.floor(Math.random() * 21) + 20, randomShadeOfGrey, -200, Math.floor(Math.random() * asteroidsGame.canvas.height), Math.floor(Math.random() * 5) + 1, Math.floor(Math.random() * 11) - 5));
+    } else { // dolje
+        asteroids.push(new asteroidComponent(Math.floor(Math.random() * 21) + 20, randomShadeOfGrey, Math.floor(Math.random() * asteroidsGame.canvas.width), -200, Math.floor(Math.random() * 11) - 5, Math.floor(Math.random() * 5) + 1));
+    }
+}
+
 // funkcija za pokretanje igre
 // pokreće se onload body elementa u HTML dokumentu
-function startGame() {
+
+async function startGame() {
+    
+    // pokrećem igru, tj. kreiram canvas i tu se onda definiraju i event listeneri i context i sl.
+    asteroidsGame.start();
     // kreiram zvijezde u pozadini, 1500 komada
     for (var i = 0; i < 1000; i++) {
         //pozicije zviježda su random, širina i visina su 3px, to mi je najbolje izgledalo
         // random pozicije kako je zadano i onda se u tom patternu zvijezde ponavljaju kad izađu iz canvasa
         stars.push(new starComponent(starSize, Math.floor(Math.random() * window.innerWidth), Math.floor(Math.random() * window.innerHeight)));
     }
-    // pokrećem igru, tj. kreiram canvas i tu se onda definiraju i event listeneri i context i sl.
-    asteroidsGame.start();
     // kreiram igrača, pozicioniram ga na sredinu canvasa kako je zadano
     playerPiece = new playerComponent(playerSize, "red", asteroidsGame.canvas.width / 2 - playerSize / 2, asteroidsGame.canvas.height / 2 - playerSize / 2, "player");
+
+    // odbrojavanje do početka igre
+    setTimeout(function() {
+        ctx.clearRect(0, 0, asteroidsGame.canvas.width, asteroidsGame.canvas.height);
+        for (var i = 0; i < 10; i++) {
+            createSingleAsteroid();
+        }
+    }, 3000);
+    
 }
+
+
