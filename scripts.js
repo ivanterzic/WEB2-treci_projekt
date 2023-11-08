@@ -348,8 +348,3 @@ function displayTime() {
     ctx.fillText(`Broj asteroida: ${asteroids.length}`, asteroidsGame.canvas.width - 250, 90);
 }
 
-//TODO
-// dodati reset button
-// dodati ispis na početku igre
-// spojiti createSingleAsteroid i asteroidComponent u jednu funkciju
-// komenatirati kod
