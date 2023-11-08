@@ -26,7 +26,7 @@ const asteroidsGame = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.frameNo = 0;
         // postavljam interval na 5 milisekundi za update canvasa
-        this.interval = setInterval(updateGameArea, 5);
+        this.interval = setInterval(updateGameArea, 10);
         // dodajemo event listenere za tipke
         // oni su bitni za kretanje igrača, kad ih nebi bilo pritisak na tipku nebi imao nikakav efekt
         // keys polje bilježi koje su tipke pritisnute, a koje nisu, na taj način se igrač može kretati i dijagonalno ako drži dvije tipke
@@ -83,19 +83,19 @@ function playerComponent(size, color, x, y, type) {
         asteroidsGame.keys = asteroidsGame.keys || {}; 
         // pomicanje po x osi ulijevo za a i lijevu strelicu, gore sam opisao zašto je -2
         if (asteroidsGame.keys[37] || asteroidsGame.keys[65]) {
-            this.speed_x = -2;
+            this.speed_x = -3;
         }
         // pomicanje po x osi udesno za d i desnu strelicu
         if (asteroidsGame.keys[39] || asteroidsGame.keys[68]) {
-            this.speed_x = 2;
+            this.speed_x = 3;
         }
         // pomicanje po y osi prema gore za w i strelicu gore
         if (asteroidsGame.keys[38] || asteroidsGame.keys[87]) {
-            this.speed_y = -2;
+            this.speed_y = -3;
         }
         // pomicanje po y osi prema dolje za s i strelicu dolje
         if (asteroidsGame.keys[40] || asteroidsGame.keys[83]) {
-            this.speed_y = 2;
+            this.speed_y = 3;
         }
         // ako niti jedan od tipki lijeve i desne strelice te a i d nisu pritisnute, brzina po x osi je 0, logično
         if (!asteroidsGame.keys[37] && !asteroidsGame.keys[39] && !asteroidsGame.keys[65] && !asteroidsGame.keys[68]) {
@@ -181,32 +181,32 @@ function asteroidComponent(size, color, x, y, speed_x, speed_y) {
         this.x += this.speed_x + this.speed_x2;
         this.y += this.speed_y + this.speed_y2;
         // ako asteroid izađe izvan canvasa, vraćam ga na početak
-        if (this.x < -this.width - 300 || this.y < -this.height - 300 || this.x > asteroidsGame.canvas.width + this.width + 300 || this.y > asteroidsGame.canvas.height + this.height + 300) {
+        if (this.x < -this.width - 201 || this.y < -this.height - 201 || this.x > asteroidsGame.canvas.width + this.width + 201 || this.y > asteroidsGame.canvas.height + this.height + 201) {
             // generiram random smjer kretanja asteroida
             var direction = Math.floor(Math.random() * 4);
             if (direction === 0) { // lijevo
-                this.x = asteroidsGame.canvas.width + this.width;
+                this.x = asteroidsGame.canvas.width + 200;
                 this.y = Math.floor(Math.random() * asteroidsGame.canvas.height);
                 this.speed_x = -Math.floor(Math.random() * 5) - 1;
                 this.speed_y = Math.floor(Math.random() * 11) - 5;
             } else if (direction === 1) { // gore
                 this.x = Math.floor(Math.random() * asteroidsGame.canvas.width);
-                this.y = -this.height;
+                this.y = asteroidsGame.canvas.height + 200;
                 this.speed_x = Math.floor(Math.random() * 11) - 5;
                 this.speed_y = -Math.floor(Math.random() * 5) - 1;
             } else if (direction === 2) { // desno
-                this.x = -this.width;
+                this.x = -200;
                 this.y = Math.floor(Math.random() * asteroidsGame.canvas.height);
                 this.speed_x = Math.floor(Math.random() * 5) + 1;
                 this.speed_y = Math.floor(Math.random() * 11) - 5;
             } else { // dolje
                 this.x = Math.floor(Math.random() * asteroidsGame.canvas.width);
-                this.y = asteroidsGame.canvas.height + this.height;
+                this.y = -200;
                 this.speed_x = Math.floor(Math.random() * 11) - 5;
                 this.speed_y = Math.floor(Math.random() * 5) + 1;
             }
-            this.speed_x2 += 0.01;
-            this.speed_y2 += 0.01;
+            this.speed_x2 += 0.075;
+            this.speed_y2 += 0.075;
         }
     }
 }
@@ -230,6 +230,7 @@ function updateGameArea() {
         asteroids[i].newPos();
         asteroids[i].update();
     }
+    console.log(asteroids.length);
 }
 
 function createSingleAsteroid() {
@@ -254,7 +255,6 @@ function createSingleAsteroid() {
 
 // funkcija za pokretanje igre
 // pokreće se onload body elementa u HTML dokumentu
-
 async function startGame() {
     
     // pokrećem igru, tj. kreiram canvas i tu se onda definiraju i event listeneri i context i sl.
@@ -277,5 +277,9 @@ async function startGame() {
     }, 3000);
     
 }
+
+setInterval(function() {
+    createSingleAsteroid();
+}, 20000);
 
 
