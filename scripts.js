@@ -8,6 +8,8 @@ var playerPiece;
 var stars = [];
 // polje varijabli za asteroide
 var asteroids = [];
+let startTime = null;
+const bestTime = Number(localStorage.getItem('bestTime')) || 0;
 
 // varijabla igre, tu ću pohraniti informacije o canvasu
 // po uzoru na engine s predavanja
@@ -67,6 +69,8 @@ function playerComponent(size, color, x, y, type) {
         // translatiram kontekst na poziciju igrača, ona se mijenja s newpos funkcijom
         ctx.translate(this.x, this.y);
         ctx.fillStyle = color;
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 20;
         // popunjavam pravookutnik bojom, stavljam x koordinatu, y koordinatu, širinu i visinu
         ctx.fillRect(this.size / -2, this.size / -2, this.size, this.size);
         ctx.restore();
@@ -171,6 +175,8 @@ function asteroidComponent(size, color, x, y, speed_x, speed_y) {
         ctx.translate(this.x, this.y);
         // crtam asteroid kao pravokutnik
         ctx.fillStyle = this.color;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "black";
         ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
         // dodajem 3D sjenku oko ruba asteroida
         ctx.restore();
@@ -211,28 +217,6 @@ function asteroidComponent(size, color, x, y, speed_x, speed_y) {
     }
 }
 
-
-//ova funkcija za update canvasa se poziva svakih 5 milisekundi
-function updateGameArea() {
-    // ona cleara canvas, updatea pozicije svih elemenata i iscrtava ih
-    asteroidsGame.clear();
-    // priv elementi koje updatea i crta su zvijezde
-    for (var i = 0; i < stars.length; i++) {
-        // računa novu poziciju za svaku zvijezdu te ju onda updatea i iscrtava
-        stars[i].newPos();
-        stars[i].update();
-    }
-    // analogno za igrača
-    playerPiece.newPos();
-    playerPiece.update();
-    // analogno za asteroide
-    for (var i = 0; i < asteroids.length; i++) {
-        asteroids[i].newPos();
-        asteroids[i].update();
-    }
-    console.log(asteroids.length);
-}
-
 function createSingleAsteroid() {
     // pozicije asteroida su random, širina i visina su 40px
     // brzina asteroida je random, ali je ograničena na -2, -1, 0, 1, 2
@@ -253,10 +237,66 @@ function createSingleAsteroid() {
     }
 }
 
+// funkcija za provjeru kolizije
+function checkCollision() {
+    for (var i = 0; i < asteroids.length; i++) {
+        var dx = playerPiece.x - asteroids[i].x;
+        var dy = playerPiece.y - asteroids[i].y;
+        var distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < playerPiece.size / 2 + asteroids[i].width / 2) {
+            // kolizija se dogodila, igra se zaustavlja
+            asteroidsGame.stop();
+            // provjeravamo je li ostvareno novo najbolje vrijeme
+            const currentTime = new Date() - startTime;
+            
+            if (currentTime > new Date() - new Date('00:00.000')) {
+                localStorage.setItem('bestTime', currentTime);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+//ova funkcija za update canvasa se poziva svakih 5 milisekundi
+function updateGameArea() {
+    // ona cleara canvas, updatea pozicije svih elemenata i iscrtava ih
+    asteroidsGame.clear();
+    // priv elementi koje updatea i crta su zvijezde
+    for (var i = 0; i < stars.length; i++) {
+        // računa novu poziciju za svaku zvijezdu te ju onda updatea i iscrtava
+        stars[i].newPos();
+        stars[i].update();
+    }
+    // analogno za igrača
+    playerPiece.newPos();
+    playerPiece.update();
+    // analogno za asteroide
+    for (var i = 0; i < asteroids.length; i++) {
+        asteroids[i].newPos();
+        asteroids[i].update();
+    }
+    // provjeravam je li igrač udario u asteroid
+    if (checkCollision()) {
+        // ako je, ispisujem poruku i zaustavljam igru
+        ctx = asteroidsGame.context;
+        ctx.font = "30px Arial";
+        ctx.fillStyle = "white";
+        ctx.fillText("Game over!", asteroidsGame.canvas.width / 2 - 80, asteroidsGame.canvas.height / 2);
+        asteroidsGame.stop();
+        const currentTime = new Date() - startTime;
+        console.log(currentTime, bestTime);
+        if (currentTime > new Date(bestTime)) {
+            localStorage.setItem('bestTime', currentTime);
+        }
+    }
+    displayTime();
+}
+
 // funkcija za pokretanje igre
 // pokreće se onload body elementa u HTML dokumentu
+// funkcija za pokretanje igre
 async function startGame() {
-    
     // pokrećem igru, tj. kreiram canvas i tu se onda definiraju i event listeneri i context i sl.
     asteroidsGame.start();
     // kreiram zvijezde u pozadini, 1500 komada
@@ -274,12 +314,42 @@ async function startGame() {
         for (var i = 0; i < 10; i++) {
             createSingleAsteroid();
         }
+        // započinjemo mjerenje vremena
+        started = true;
+        startTime = new Date();
     }, 3000);
-    
 }
 
 setInterval(function() {
     createSingleAsteroid();
 }, 20000);
 
+var started = false;
+// funkcija za prikaz vremena u gornjem desnom kutu
+function displayTime() {
+    const currentTime = new Date() - startTime;
+    const minutes = Math.floor(currentTime / 60000);
+    const seconds = ((currentTime % 60000) / 1000).toFixed(3);
+    const formattedTime = `${minutes < 10 ? "0" : ""}${minutes}:${(seconds < 10 ? "0" : "")}${seconds}`;
 
+    const bestTimeMinutes = Math.floor(bestTime / 60000);
+    const bestTimeSeconds = ((bestTime % 60000) / 1000).toFixed(3);
+    const formattedBestTime = `${bestTimeMinutes < 10 ? "0" : ""}${bestTimeMinutes}:${(bestTimeSeconds < 10 ? "0" : "")}${bestTimeSeconds}`;
+    ctx = asteroidsGame.context;
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "white";
+    if (started) {
+        ctx.fillText(`Vrijeme: ${formattedTime}`, asteroidsGame.canvas.width - 174, 30);
+    }
+    else {
+        ctx.fillText(`Vrijeme: 00:00.000`, asteroidsGame.canvas.width - 174, 30);
+    }
+    ctx.fillText(`Najbolje vrijeme: ${formattedBestTime}`, asteroidsGame.canvas.width - 250, 60);
+    ctx.fillText(`Broj asteroida: ${asteroids.length}`, asteroidsGame.canvas.width - 250, 90);
+}
+
+//TODO
+// dodati reset button
+// dodati ispis na početku igre
+// spojiti createSingleAsteroid i asteroidComponent u jednu funkciju
+// komenatirati kod
