@@ -292,13 +292,35 @@ function updateGameArea() {
         ctx = asteroidsGame.context;
         ctx.font = "30px Arial";
         ctx.fillStyle = "white";
-        ctx.fillText("Igra gotova!", asteroidsGame.canvas.width / 2 - 80, asteroidsGame.canvas.height / 2);
+        ctx.fillText("Igra gotova!", asteroidsGame.canvas.width / 2 - ctx.measureText("Igra gotova!").width/2, asteroidsGame.canvas.height / 2);
         asteroidsGame.stop();
         const currentTime = new Date() - startTime;
         console.log(currentTime, bestTime);
         if (currentTime > new Date(bestTime)) {
             localStorage.setItem('bestTime', currentTime);
         }
+        // add a button on the canvas to reset the game under the text  
+        var button = document.createElement("button");
+        button.innerHTML = "Reset";
+        button.style.position = "absolute";
+        
+        var buttonWidth = 100;
+        var buttonHeight = 45;
+        button.style.width = buttonWidth + "px";
+        button.style.height = buttonHeight + "px";
+        button.style.left = window.innerWidth / 2 - buttonWidth / 2 + "px";
+        button.style.top = window.innerHeight / 2 + buttonHeight / 2 + "px";
+        button.style.backgroundColor = "white";
+        button.style.color = "black";
+        button.style.borderRadius = "5px";
+        button.style.fontFamily = "Arial";
+        button.style.fontSize = "15px";
+        button.style.cursor = "pointer";
+        button.onclick = function() {
+            location.reload();
+        };
+        asteroidsGame.canvas.parentNode.appendChild(button);
+
     }
     displayTime();
 }
@@ -357,4 +379,5 @@ function displayTime() {
     ctx.fillText(`Najbolje vrijeme: ${formattedBestTime}`, asteroidsGame.canvas.width - ctx.measureText("Najbolje vrijeme : 00:00.000").width, 60);
     //ctx.fillText(`Broj asteroida: ${asteroids.length}`, asteroidsGame.canvas.width - 250, 90);
 }
+
 
