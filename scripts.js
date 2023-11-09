@@ -302,8 +302,7 @@ function updateGameArea() {
         // add a button on the canvas to reset the game under the text  
         var button = document.createElement("button");
         button.innerHTML = "Reset";
-        button.style.position = "absolute";
-        
+        button.style.position = "relative";
         var buttonWidth = 100;
         var buttonHeight = 45;
         button.style.width = buttonWidth + "px";
@@ -319,7 +318,7 @@ function updateGameArea() {
         button.onclick = function() {
             location.reload();
         };
-        asteroidsGame.canvas.parentNode.appendChild(button);
+        
 
     }
     displayTime();
