@@ -272,16 +272,17 @@ function updateGameArea() {
         if (currentTime > new Date(bestTime)) {
             localStorage.setItem('bestTime', currentTime);
         }
-        // add a button on the canvas to reset the game under the text  
         var button = document.createElement("button");
-        button.innerHTML = "Reset";
-        button.style.position = "relative";
-        var buttonWidth = 100;
-        var buttonHeight = 45;
+        button.innerHTML = "Resetiraj igru!";
+        button.style.position = "absolute";
+        var buttonWidth = ctx.measureText("Resetiraj igru").width * 1;
+        var buttonHeight = 60;
+        console.log(buttonWidth, buttonHeight);
         button.style.width = buttonWidth + "px";
         button.style.height = buttonHeight + "px";
         button.style.left = window.innerWidth / 2 - buttonWidth / 2 + "px";
         button.style.top = window.innerHeight / 2 + buttonHeight / 2 + "px";
+        console.log(button.style.left, button.style.top);
         button.style.backgroundColor = "white";
         button.style.color = "black";
         button.style.borderRadius = "5px";
@@ -291,6 +292,8 @@ function updateGameArea() {
         button.onclick = function() {
             location.reload();
         };
+        document.body.appendChild(button);
+        console.log(button);
     }
     displayTime();
 }
