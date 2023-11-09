@@ -258,6 +258,8 @@ function checkCollision() {
     return false;
 }
 
+var loadTime = new Date();
+var noOfDotsOnLoad = 0;
 //ova funkcija za update canvasa se poziva svakih 5 milisekundi
 function updateGameArea() {
     // ona cleara canvas, updatea pozicije svih elemenata i iscrtava ih
@@ -276,13 +278,21 @@ function updateGameArea() {
         asteroids[i].newPos();
         asteroids[i].update();
     }
+
+    if (!started) {
+        ctx = asteroidsGame.context;
+        ctx.font = "30px Arial";
+        ctx.fillStyle = "white";
+        var printString = "Igra počinje za " + (3 - Math.floor((new Date() - loadTime) / 1000)) + "...";
+        ctx.fillText(printString, asteroidsGame.canvas.width / 2 - ctx.measureText(printString).width / 2 , asteroidsGame.canvas.height / 2);
+    }
     // provjeravam je li igrač udario u asteroid
     if (checkCollision()) {
         // ako je, ispisujem poruku i zaustavljam igru
         ctx = asteroidsGame.context;
         ctx.font = "30px Arial";
         ctx.fillStyle = "white";
-        ctx.fillText("Game over!", asteroidsGame.canvas.width / 2 - 80, asteroidsGame.canvas.height / 2);
+        ctx.fillText("Igra gotova!", asteroidsGame.canvas.width / 2 - 80, asteroidsGame.canvas.height / 2);
         asteroidsGame.stop();
         const currentTime = new Date() - startTime;
         console.log(currentTime, bestTime);
@@ -339,12 +349,12 @@ function displayTime() {
     ctx.font = "20px Arial";
     ctx.fillStyle = "white";
     if (started) {
-        ctx.fillText(`Vrijeme: ${formattedTime}`, asteroidsGame.canvas.width - 174, 30);
+        ctx.fillText(`Vrijeme: ${formattedTime}`, asteroidsGame.canvas.width - ctx.measureText("Vrijeme : 00:00.000").width, 30);
     }
     else {
-        ctx.fillText(`Vrijeme: 00:00.000`, asteroidsGame.canvas.width - 174, 30);
+        ctx.fillText(`Vrijeme: 00:00.000`, asteroidsGame.canvas.width - ctx.measureText("Vrijeme : 00:00.000").width, 30);
     }
-    ctx.fillText(`Najbolje vrijeme: ${formattedBestTime}`, asteroidsGame.canvas.width - 250, 60);
-    ctx.fillText(`Broj asteroida: ${asteroids.length}`, asteroidsGame.canvas.width - 250, 90);
+    ctx.fillText(`Najbolje vrijeme: ${formattedBestTime}`, asteroidsGame.canvas.width - ctx.measureText("Najbolje vrijeme : 00:00.000").width, 60);
+    //ctx.fillText(`Broj asteroida: ${asteroids.length}`, asteroidsGame.canvas.width - 250, 90);
 }
 
