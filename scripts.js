@@ -1,19 +1,23 @@
+// definicija konstanti veličina za igru
 const playerSize = 40;
 const starSize = 3;
-
+const playerSpeed = 3;
 
 // definicija varijabli za pojedine elemente
+
 // varijabla za igrača
 var playerPiece;
 // polje varijabli za zvijezde u pozadini
 var stars = [];
 // polje varijabli za asteroide
 var asteroids = [];
+// inicijalizacija varijable vremena početka
 let startTime = null;
+// dohvat najboljeg vremena iz local storagea, kako je zadano u specifikaciji zadatka, koristeći HTML5 Web Storage API
 const bestTime = Number(localStorage.getItem('bestTime')) || 0;
 
 // varijabla igre, tu ću pohraniti informacije o canvasu
-// po uzoru na engine s predavanja
+// po uzoru na engine s predavanja, neki elementi su promijenjeni
 const asteroidsGame = {
     // kreiram canvas element
     canvas: document.createElement("canvas"),
@@ -27,12 +31,11 @@ const asteroidsGame = {
         this.context = this.canvas.getContext("2d");
         // ubacujem canvas u body same HTML5 stranice
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-        this.frameNo = 0;
-        // postavljam interval na 5 milisekundi za update canvasa
+        // postavljam interval na 10 milisekundi za update canvasa
         this.interval = setInterval(updateGameArea, 10);
         // dodajemo event listenere za tipke
         // oni su bitni za kretanje igrača, kad ih nebi bilo pritisak na tipku nebi imao nikakav efekt
-        // keys polje bilježi koje su tipke pritisnute, a koje nisu, na taj način se igrač može kretati i dijagonalno ako drži dvije tipke
+        // keys polje bilježi koje su tipke pritisnute, a koje nisu, na taj način se igrač može kretati i dijagonalno ako drži dvije tipke jer se kasnije u kodu provjerava koje su tipke pritisnute i po tome se mijenjaju koordinate igrača
         document.addEventListener("keydown", function (e) {
             asteroidsGame.keys = (asteroidsGame.keys || []);
             asteroidsGame.keys[e.keyCode] = true;
@@ -43,7 +46,7 @@ const asteroidsGame = {
         });
     },
     stop: function () {
-        // brišem interval i tako zaustavljam igru
+        // brišem interval i tako zaustavljam igru,zaustavljaju se animacije i sve ostalo
         clearInterval(this.interval);
     },
     clear: function () {
@@ -53,15 +56,18 @@ const asteroidsGame = {
 }
 
 // ovo je komponenta samog igrača, preiuzeto s predavanja
-function playerComponent(size, color, x, y) {
-    // definiram varijable za komponentu, tip, dimenzije, boja, pozicija, brzina
+function playerComponent(size, color, x, y, speed) {
+    // definiram varijable za komponentu, tip, dimenzije, boju, poziciju, brzinu
     this.size = size;
+    this.color = color;
+    // incijaliziram brzinu na 0, igrač se ne kreće dok ne pritisne tipku
     this.speed_x = 0;
     this.speed_y = 0;
     this.x = x;
     this.y = y;
+    this.playerSpeed = speed;
     // funkcija za update komponente
-    // funkcija se poziva kod svakog refresha canvasa i osvježava poziciju komponente igrača
+    // funkcija se poziva kod svakog refresha canvasa, odnosno updateGameArea, i osvježava poziciju komponente igrača
     this.update = function () {
         // dohvaćam kontekst canvasa
         ctx = asteroidsGame.context;
@@ -69,9 +75,11 @@ function playerComponent(size, color, x, y) {
         // translatiram kontekst na poziciju igrača, ona se mijenja s newpos funkcijom
         ctx.translate(this.x, this.y);
         ctx.fillStyle = color;
+        // dodajem 3D sjenu oko ruba igrača, zadano zadatakom
         ctx.shadowColor = "black";
         ctx.shadowBlur = 20;
         // popunjavam pravookutnik bojom, stavljam x koordinatu, y koordinatu, širinu i visinu
+        // x i y koordinate su ovog oblika jer je kontekst canvasa već translatiran na željenu poziciju igrača pa onda crtam igrača na poziciji koja je za pola njegove stranice u lijevo i gore, što je u negativnim smjerovima 
         ctx.fillRect(this.size / -2, this.size / -2, this.size, this.size);
         ctx.restore();
     }
@@ -79,28 +87,30 @@ function playerComponent(size, color, x, y) {
     // u odnosu na predavanje, dodao sam movement po x i y osi s tipkama strelica
     // dodao sam i wasd tipke za kretanje jer mi se prolila kava po tipkovnici, ne radi mi lijeva strelica pa moram tako testirati :)
     this.newPos = function () {
-        // na brzini 2 je igra dosta responzivna, to mi se sviđa pa sam ostavio tako
-        // za tipke sam koristio brojeve tipki, 37 za lijevo, 38 za gore, 39 za desno i 40 za dolje
-        // w, a, s, d su 87, 65, 83, 68
+        // za keyCode sam koristio brojeve tipki, 37 za lijevo, 38 za gore, 39 za desno i 40 za dolje, w, a, s, d su analogno 87, 65, 83, 68
         // negativne su vrijednosti za lijevo i gore, pozitivne za desno i dolje jer je koordinatni sustav u canvasu takav da je 0,0 u gornjem lijevom kutu
-        // povećavanjem brojeva idem dolje i desno, smanjivanjem lijevo i gore
-        asteroidsGame.keys = asteroidsGame.keys || {}; 
-        // pomicanje po x osi ulijevo za a i lijevu strelicu, gore sam opisao zašto je -2
+        asteroidsGame.keys = asteroidsGame.keys || {}; // ako je keys undefined, postavi ga na prazan objekt
+        // ako su pritisnute tipke lijeve strelice ili a, brzina po x osi je -playerSpeed, tj. igrač se kreće u lijevo
         if (asteroidsGame.keys[37] || asteroidsGame.keys[65]) {
-            this.speed_x = -3;
+            // brzina po x osi je apsolutne vrijednost playerSpeed koji se prosljeđuje u konstruktoru, tj. igrač se kreće za playerSpeed u lijevo
+            this.speed_x = -this.playerSpeed;
         }
         // pomicanje po x osi udesno za d i desnu strelicu
         if (asteroidsGame.keys[39] || asteroidsGame.keys[68]) {
-            this.speed_x = 3;
+            // brzina po x osi je playerSpeed, tj. igrač se kreće u desno
+            this.speed_x = this.playerSpeed;
         }
         // pomicanje po y osi prema gore za w i strelicu gore
         if (asteroidsGame.keys[38] || asteroidsGame.keys[87]) {
-            this.speed_y = -3;
+            // brzina po y osi je -playerSpeed, tj. igrač se kreće prema gore
+            this.speed_y = -this.playerSpeed;
         }
         // pomicanje po y osi prema dolje za s i strelicu dolje
         if (asteroidsGame.keys[40] || asteroidsGame.keys[83]) {
-            this.speed_y = 3;
+            // brzina po y osi je playerSpeed, tj. igrač se kreće prema dolje
+            this.speed_y = this.playerSpeed;
         }
+        // u sljedećim ifovima detektiram trebam li brzinu po x ili y osi postaviti na 0
         // ako niti jedan od tipki lijeve i desne strelice te a i d nisu pritisnute, brzina po x osi je 0, logično
         if (!asteroidsGame.keys[37] && !asteroidsGame.keys[39] && !asteroidsGame.keys[65] && !asteroidsGame.keys[68]) {
             this.speed_x = 0;
@@ -109,11 +119,10 @@ function playerComponent(size, color, x, y) {
         if (!asteroidsGame.keys[38] && !asteroidsGame.keys[40] && !asteroidsGame.keys[87] && !asteroidsGame.keys[83]) {
             this.speed_y = 0;
         }
-        // provjera je li igrač na rubu canvasa
-        // ako je, ne dozvoljavam mu da ode preko pojedinog ruba canvasa
-        // ako nije, dozvoljavam mu da se kreće
+        // provjera je li igrač na rubu canvasa za pojeidne osi
+        // ako je, ne dozvoljavam mu da ode preko pojedinog ruba canvasa, ako nije, dozvoljavam mu da se kreće
         // logika iza uvjeta -> ako je njegov x položaj + brzina po x osi veći od 0 i manji od širine canvasa - širine igrača, dozvoljavam mu da se kreće po x osi
-        // polovice player width i player height su u uvjetu jer inače mu polovica igrača može izaći izvan canvasa
+        // polovice player width i player height su u uvjetu jer inače polovica igrača može izaći izvan canvasa
         if (this.x + this.speed_x > this.size / 2 && this.x + this.speed_x < asteroidsGame.canvas.width - this.size / 2) {
             this.x += this.speed_x;
         }
@@ -125,14 +134,15 @@ function playerComponent(size, color, x, y) {
     }
 }
 
-// po uzoru na predavanje radim komponente za zvijezde u pozadini, razdvojio sam u posebnu funkciju
+// po uzoru na predavanje radim komponente za zvijezde u pozadini, razdvojio sam u posebnu funkciju od drugih objekata na canvasu
 function starComponent(size, x, y) {
     //definiram elemente za zvijezdu, dimenzije, boju, poziciju
     this.size = size;
-    // boja je bijela s poluprozirnošću 0.2, tako mi ljepše izgleda
+    // boja je bijela,kako je zadano u zadatku, s opacity 0.2, tako mi ljepše izgleda
     this.color = "rgba(255, 255, 255, 0.2)";
     this.x = x;
     this.y = y;
+    // funkcija za update položaja zvijezde u nekom trenutku
     this.update = function () {
         // update sličan kao i kod igrača
         ctx = asteroidsGame.context;
@@ -141,32 +151,34 @@ function starComponent(size, x, y) {
         // iscrtavam pravokutnik na poziciji x, y, širine i visine
         ctx.fillRect(this.x, this.y, this.size, this.size);
     }
-    // funkcija za postavljanje nove pozicije, računa se na način da se y koordinata povećava za 0.5, tj. da se zvijezde spuštaju prema dolje
+    // funkcija za postavljanje nove pozicije, računa se na način da se y koordinata povećava za 0.35, tj. da se zvijezde spuštaju prema dolje
     this.newPos = function () {
-        // ako zvijrzda dođe do dna canvasa, vraćam ju na vrh
+        // ako zvijezda dođe do dna canvasa, vraćam ju na vrh na random x poziciju kako se nebo nebi ponavljalo
         if (this.y + this.size > asteroidsGame.canvas.height) {
             this.y = 0;
+            this.x = Math.floor(Math.random() * asteroidsGame.canvas.width);
         } else {
-            // inače se nastavlja kretati konstantnom brzinom prema dolje
+            // inače se nastavlja kretati konstantnom brzinom prema dolje prema donjem rubu canvasa
             this.y += 0.35;
         }
     }
 }
 
-// funkcija za asteroid
+// funkcija za asteroid, analogno kao i za igrača i zvijezde
 function asteroidComponent() {
     // definiram varijable za asteroid, dimenzije, boja, pozicija, brzina
-    this.width = this.height = getRandomAsteroidSize();
+    // ovi su elementi random, kako je zadano u specifikaciji zadatka, a konkretne implementacije funkcija su u utils.js jer mi je tako bilo preglednije raditi
+    this.size = getRandomAsteroidSize();
     this.color = getRandomAsteroidColor();
     var {x, y, speed_x, speed_y} = getAsteroidDirectionAndSpeed();
     this.x = x;
     this.y = y;
     this.speed_x = speed_x;
     this.speed_y = speed_y;
+    // ove će mi vrijednosti koristiti za ubrzavanje asteroida kako igrač duže igra
     this.speed_x2 = this.speed_y2 = 0;
-    this.angle = 0; // kut rotacije asteroida
-    this.rotationSpeed = Math.random() * 0.1 - 0.05; // brzina rotacije asteroida
-
+    this.angle = 0;
+    this.rotationSpeed = Math.random() * 0.1 - 0.05
     // funkcija za update asteroida
     // funkcija se poziva kod svakog refresha canvasa i osvježava poziciju asteroida
     this.update = function () {
@@ -176,60 +188,49 @@ function asteroidComponent() {
         // translatiram kontekst canvasa na poziciju asteroida
         ctx.translate(this.x, this.y);
         // rotiram kontekst canvasa za kut rotacije asteroida
-        ctx.rotate(this.angle);
         // crtam asteroid kao pravokutnik
         ctx.fillStyle = this.color;
+        // dodajem 3D sjenu kako je zadano u zadatku
         ctx.shadowBlur = 20;
         ctx.shadowColor = "black";
-        ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
-        // dodajem 3D sjenku oko ruba asteroida
+        // popunjavam pravokutnik bojom, stavljam x koordinatu, y koordinatu, širinu i visinu, dijeljenje s negativnom polovicom dimenzije je u uvjetu iz istog razloga kao i kod igrača
+        ctx.fillRect(this.size / -2, this.size / -2, this.size, this.size);
         ctx.restore();
     }
     // funkcija za postavljanje nove pozicije asteroida
     this.newPos = function () {
-        // pomicanje asteroida po x i y osi
+        // pomicanje asteroida po x i y osi, i za brzine 1 i 2 
         this.x += this.speed_x + this.speed_x2;
         this.y += this.speed_y + this.speed_y2;
-        // ako asteroid izađe izvan canvasa, vraćam ga na početak
+        // ako asteroid izađe izvan canvasa i 200px sa svake strane, vraćam ga na random poziciju i generiram mu novi smjer kretanja
+        // ovo mi je potrebno jer se asteroidi stvaraju izvan rubova canvasa pa da nemam toleranciju od 201px, tek stvoreni asteroidi bi se odmah vratili na random poziciju i opet bi se stvorili izvan canvasa i tako u krug
         if (this.x < -this.width - 201 || this.y < -this.height - 201 || this.x > asteroidsGame.canvas.width + this.width + 201 || this.y > asteroidsGame.canvas.height + this.height + 201) {
-            // generiram random smjer kretanja asteroida
+            // generiram random smjer kretanja asteroida, kao kod incijalizacije
             var {x, y, speed_x, speed_y} = getAsteroidDirectionAndSpeed();
             this.x = x;
             this.y = y;
             this.speed_x = speed_x;
             this.speed_y = speed_y;
+            // svi parametri kretnje asteroida se opet randomiziraju ako izađe iz granica, boja i dimenzije ostaju iste, a ubrzanje povećavam za 0.075 što znači da svaki put kad asteroid izađe izvan canvasa, ubrzava se sljedeći put kad se pojavi
             this.speed_x2 += 0.075;
             this.speed_y2 += 0.075;
         }
-        // povećavam kut rotacije asteroida za brzinu rotacije
-        this.angle += this.rotationSpeed;
     }
 }
 
 
-
-// funkcija za provjeru kolizije
+// funkcija za provjeru kolizije, izvršava se kod svakog refresha canvasa za svaki asteroid
 function checkCollision() {
-    for (var i = 0; i < asteroids.length; i++) {
-        var dx = playerPiece.x - asteroids[i].x;
-        var dy = playerPiece.y - asteroids[i].y;
-        var distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < playerPiece.size / 2 + asteroids[i].width / 2) {
-            // kolizija se dogodila, igra se zaustavlja
-            asteroidsGame.stop();
-            // provjeravamo je li ostvareno novo najbolje vrijeme
-            const currentTime = new Date() - startTime;
-            
-            if (currentTime > new Date() - new Date('00:00.000')) {
-                localStorage.setItem('bestTime', currentTime);
-            }
-            return true;
-        }
-    }
+    // za svaki asteroid
+    for (let i = 0; i < asteroids.length ; ++i){
+        
+    // ako nema preklapanja, vrati false
     return false;
 }
 
+// vrijeme učitavanja stranice
 var loadTime = new Date();
+// inicijalan broj
 var noOfDotsOnLoad = 0;
 //ova funkcija za update canvasa se poziva svakih 5 milisekundi
 function updateGameArea() {
@@ -245,13 +246,10 @@ function updateGameArea() {
     playerPiece.newPos();
     playerPiece.update();
     // analogno za asteroide
-
     for (var i = 0; i < asteroids.length; i++) {
         asteroids[i].newPos();
         asteroids[i].update();
     }
-    
-
     if (!started) {
         ctx = asteroidsGame.context;
         ctx.font = "30px Arial";
@@ -262,13 +260,13 @@ function updateGameArea() {
     // provjeravam je li igrač udario u asteroid
     if (checkCollision()) {
         // ako je, ispisujem poruku i zaustavljam igru
+        asteroidsGame.stop();
         ctx = asteroidsGame.context;
         ctx.font = "30px Arial";
         ctx.fillStyle = "white";
         ctx.fillText("Igra gotova!", asteroidsGame.canvas.width / 2 - ctx.measureText("Igra gotova!").width/2, asteroidsGame.canvas.height / 2);
-        asteroidsGame.stop();
+        
         const currentTime = new Date() - startTime;
-        console.log(currentTime, bestTime);
         if (currentTime > new Date(bestTime)) {
             localStorage.setItem('bestTime', currentTime);
         }
@@ -311,7 +309,7 @@ async function startGame() {
         stars.push(new starComponent(starSize, Math.floor(Math.random() * window.innerWidth), Math.floor(Math.random() * window.innerHeight)));
     }
     // kreiram igrača, pozicioniram ga na sredinu canvasa kako je zadano
-    playerPiece = new playerComponent(playerSize, "red", asteroidsGame.canvas.width / 2 - playerSize / 2, asteroidsGame.canvas.height / 2 - playerSize / 2);
+    playerPiece = new playerComponent(playerSize, "red", asteroidsGame.canvas.width / 2 - playerSize / 2, asteroidsGame.canvas.height / 2 - playerSize / 2, playerSpeed);
 
     // odbrojavanje do početka igre
     setTimeout(function() {
@@ -350,5 +348,4 @@ function displayTime() {
         ctx.fillText(`Vrijeme: 00:00.000`, asteroidsGame.canvas.width - ctx.measureText("Vrijeme : 00:00.000").width, 30);
     }
     ctx.fillText(`Najbolje vrijeme: ${formattedBestTime}`, asteroidsGame.canvas.width - ctx.measureText("Najbolje vrijeme : 00:00.000").width, 60);
-    //ctx.fillText(`Broj asteroida: ${asteroids.length}`, asteroidsGame.canvas.width - 250, 90);
 }
