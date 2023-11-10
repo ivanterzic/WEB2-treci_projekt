@@ -1,10 +1,11 @@
 // definicija konstanti veličina za igru
 const playerSize = 40;
 const starSize = 3;
-const playerSpeed = 3;
+const playerSpeed = 1.5;
 
+// varijabla za provjeru je li igra počela nakon učitavanja stranice
+var started = false;
 // definicija varijabli za pojedine elemente
-
 // varijabla za igrača
 var playerPiece;
 // polje varijabli za zvijezde u pozadini
@@ -31,8 +32,8 @@ const asteroidsGame = {
         this.context = this.canvas.getContext("2d");
         // ubacujem canvas u body same HTML5 stranice
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-        // postavljam interval na 10 milisekundi za update canvasa
-        this.interval = setInterval(updateGameArea, 10);
+        // postavljam interval na 5 milisekundi za update canvasa
+        this.interval = setInterval(updateGameArea, 5);
         // dodajemo event listenere za tipke
         // oni su bitni za kretanje igrača, kad ih nebi bilo pritisak na tipku nebi imao nikakav efekt
         // keys polje bilježi koje su tipke pritisnute, a koje nisu, na taj način se igrač može kretati i dijagonalno ako drži dvije tipke jer se kasnije u kodu provjerava koje su tipke pritisnute i po tome se mijenjaju koordinate igrača
@@ -76,7 +77,7 @@ function playerComponent(size, color, x, y, speed) {
         ctx.translate(this.x, this.y);
         ctx.fillStyle = color;
         // dodajem 3D sjenu oko ruba igrača, zadano zadatakom
-        ctx.shadowColor = "black";
+        ctx.shadowColor = this.color;
         ctx.shadowBlur = 20;
         // popunjavam pravookutnik bojom, stavljam x koordinatu, y koordinatu, širinu i visinu
         // x i y koordinate su ovog oblika jer je kontekst canvasa već translatiran na željenu poziciju igrača pa onda crtam igrača na poziciji koja je za pola njegove stranice u lijevo i gore, što je u negativnim smjerovima 
@@ -159,7 +160,7 @@ function starComponent(size, x, y) {
             this.x = Math.floor(Math.random() * asteroidsGame.canvas.width);
         } else {
             // inače se nastavlja kretati konstantnom brzinom prema dolje prema donjem rubu canvasa
-            this.y += 0.35;
+            this.y += 0.15;
         }
     }
 }
@@ -177,8 +178,6 @@ function asteroidComponent() {
     this.speed_y = speed_y;
     // ove će mi vrijednosti koristiti za ubrzavanje asteroida kako igrač duže igra
     this.speed_x2 = this.speed_y2 = 0;
-    this.angle = 0;
-    this.rotationSpeed = Math.random() * 0.1 - 0.05
     // funkcija za update asteroida
     // funkcija se poziva kod svakog refresha canvasa i osvježava poziciju asteroida
     this.update = function () {
@@ -192,7 +191,7 @@ function asteroidComponent() {
         ctx.fillStyle = this.color;
         // dodajem 3D sjenu kako je zadano u zadatku
         ctx.shadowBlur = 20;
-        ctx.shadowColor = "black";
+        ctx.shadowColor = this.color;
         // popunjavam pravokutnik bojom, stavljam x koordinatu, y koordinatu, širinu i visinu, dijeljenje s negativnom polovicom dimenzije je u uvjetu iz istog razloga kao i kod igrača
         ctx.fillRect(this.size / -2, this.size / -2, this.size, this.size);
         ctx.restore();
@@ -204,7 +203,7 @@ function asteroidComponent() {
         this.y += this.speed_y + this.speed_y2;
         // ako asteroid izađe izvan canvasa i 200px sa svake strane, vraćam ga na random poziciju i generiram mu novi smjer kretanja
         // ovo mi je potrebno jer se asteroidi stvaraju izvan rubova canvasa pa da nemam toleranciju od 201px, tek stvoreni asteroidi bi se odmah vratili na random poziciju i opet bi se stvorili izvan canvasa i tako u krug
-        if (this.x < -this.width - 201 || this.y < -this.height - 201 || this.x > asteroidsGame.canvas.width + this.width + 201 || this.y > asteroidsGame.canvas.height + this.height + 201) {
+        if (this.x < -this.size - 100 || this.y < -this.size - 100 || this.x > asteroidsGame.canvas.width + this.size + 100 || this.y > asteroidsGame.canvas.height + this.size + 100) {
             // generiram random smjer kretanja asteroida, kao kod incijalizacije
             var {x, y, speed_x, speed_y} = getAsteroidDirectionAndSpeed();
             this.x = x;
@@ -212,8 +211,8 @@ function asteroidComponent() {
             this.speed_x = speed_x;
             this.speed_y = speed_y;
             // svi parametri kretnje asteroida se opet randomiziraju ako izađe iz granica, boja i dimenzije ostaju iste, a ubrzanje povećavam za 0.075 što znači da svaki put kad asteroid izađe izvan canvasa, ubrzava se sljedeći put kad se pojavi
-            this.speed_x2 += 0.075;
-            this.speed_y2 += 0.075;
+            this.speed_x2 += 0.035;
+            this.speed_y2 += 0.035;
         }
     }
 }
@@ -223,15 +222,48 @@ function asteroidComponent() {
 function checkCollision() {
     // za svaki asteroid
     for (let i = 0; i < asteroids.length ; ++i){
-        
+        // ako je udaljenost između središta asteroida i igrača manja od polovice zbroja njihovih dimenzija, znači da se preklapaju
+        // to je pitagorin poučak, udaljenost između dvije točke je kvadratni korijen zbroja kvadrata razlike njihovih koordinata
+        if (Math.sqrt(Math.pow(asteroids[i].x - playerPiece.x, 2) + Math.pow(asteroids[i].y - playerPiece.y, 2)) < (asteroids[i].size + playerPiece.size) / 2) {
+            // ako se preklapaju, vraćam true
+            return true;
+        }
+    }
     // ako nema preklapanja, vrati false
     return false;
 }
 
+// funkcija za prikaz vremena u gornjem desnom kutu
+function displayTime() {
+    // varijabla vremena koje je igrač ostvario u ovoj rundi, u formatu milisekundi
+    const currentTime = new Date() - startTime;
+    // dijelim cjelobrojno s 60000 da dobijem minute, ostatak dijelim s 1000 da dobijem sekunde i to s 3 decimalna mjesta kako je zadano u zadatku
+    const minutes = Math.floor(currentTime / 60000);
+    const seconds = ((currentTime % 60000) / 1000).toFixed(3);
+    // formatiram vrijeme u format mm:ss.sss
+    const formattedTime = `${minutes < 10 ? "0" : ""}${minutes}:${(seconds < 10 ? "0" : "")}${seconds}`;
+    // analogno za najbolje vrijeme
+    const bestTimeMinutes = Math.floor(bestTime / 60000);
+    const bestTimeSeconds = ((bestTime % 60000) / 1000).toFixed(3);
+    const formattedBestTime = `${bestTimeMinutes < 10 ? "0" : ""}${bestTimeMinutes}:${(bestTimeSeconds < 10 ? "0" : "")}${bestTimeSeconds}`;
+    // dohvaćam kontekst canvasa
+    ctx = asteroidsGame.context;
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "white";
+    // ako je igra počela, ispisujem na canvas vrijeme, inače ispisujem 00:00.000
+    if (started) {
+        ctx.fillText(`Vrijeme: ${formattedTime}`, asteroidsGame.canvas.width - ctx.measureText("Vrijeme : 00:00.000").width, 30);
+    }
+    else {
+        ctx.fillText(`Vrijeme: 00:00.000`, asteroidsGame.canvas.width - ctx.measureText("Vrijeme : 00:00.000").width, 30);
+    }
+    // najbolje vrijeme ispisujem u svakom slučaju
+    ctx.fillText(`Najbolje vrijeme: ${formattedBestTime}`, asteroidsGame.canvas.width - ctx.measureText("Najbolje vrijeme : 00:00.000").width, 60);
+}
+
+
 // vrijeme učitavanja stranice
 var loadTime = new Date();
-// inicijalan broj
-var noOfDotsOnLoad = 0;
 //ova funkcija za update canvasa se poziva svakih 5 milisekundi
 function updateGameArea() {
     // ona cleara canvas, updatea pozicije svih elemenata i iscrtava ih
@@ -239,6 +271,7 @@ function updateGameArea() {
     // priv elementi koje updatea i crta su zvijezde
     for (var i = 0; i < stars.length; i++) {
         // računa novu poziciju za svaku zvijezdu te ju onda updatea i iscrtava
+        // funkcija za novu poziciju je newPos, a funkcija za update je update
         stars[i].newPos();
         stars[i].update();
     }
@@ -250,49 +283,59 @@ function updateGameArea() {
         asteroids[i].newPos();
         asteroids[i].update();
     }
+    // ako igra još nije počela, ispisujem poruku i odbrojavam do početka
     if (!started) {
+        // uzimam kontekst canvasa
         ctx = asteroidsGame.context;
         ctx.font = "30px Arial";
         ctx.fillStyle = "white";
+        // ispisujem poruku, odbrojavanje je realizirano tako da se oduzme trenutno vrijeme od vremena učitavanja stranice i onda se to podijeli s 1000 da dobijem sekunde
         var printString = "Igra počinje za " + (3 - Math.floor((new Date() - loadTime) / 1000)) + "...";
+        // ispis teksta na sredini canvasa
         ctx.fillText(printString, asteroidsGame.canvas.width / 2 - ctx.measureText(printString).width / 2 , asteroidsGame.canvas.height / 2);
     }
-    // provjeravam je li igrač udario u asteroid
+    // provjeravam je li igrač udario u asteroid, kako je specificirano u zadatku, to se obavlja kod svakog updatea canvasa
     if (checkCollision()) {
         // ako je, ispisujem poruku i zaustavljam igru
         asteroidsGame.stop();
+        // dohvaćam kontekst canvasa za ispis poruke
         ctx = asteroidsGame.context;
         ctx.font = "30px Arial";
         ctx.fillStyle = "white";
+        // ispisujem poruku o kraju igre na sredini canvasa
         ctx.fillText("Igra gotova!", asteroidsGame.canvas.width / 2 - ctx.measureText("Igra gotova!").width/2, asteroidsGame.canvas.height / 2);
-        
+        // računam vrijeme koje je igrač ostvario u ovoj rundi, u formatu milisekundi
         const currentTime = new Date() - startTime;
+        // ako je to vrijeme bolje od najboljeg vremena koje je zapisano u localStorage, postavljam najbolje vrijeme na to vrijeme
         if (currentTime > new Date(bestTime)) {
+            // pristupam localStorageu putem HTML5 Web Storage API-a
             localStorage.setItem('bestTime', currentTime);
         }
+        // kreiram button za resetiranje igre koji će reloadati stranicu i stavljam ga na sredinu ekrana
         var button = document.createElement("button");
         button.innerHTML = "Resetiraj igru!";
         button.style.position = "absolute";
         var buttonWidth = ctx.measureText("Resetiraj igru").width * 1;
-        var buttonHeight = 60;
-        console.log(buttonWidth, buttonHeight);
+        var buttonHeight = 40;
         button.style.width = buttonWidth + "px";
         button.style.height = buttonHeight + "px";
+        // pozicioniranje na sredinu ekrana
         button.style.left = window.innerWidth / 2 - buttonWidth / 2 + "px";
         button.style.top = window.innerHeight / 2 + buttonHeight / 2 + "px";
-        console.log(button.style.left, button.style.top);
         button.style.backgroundColor = "white";
         button.style.color = "black";
         button.style.borderRadius = "5px";
         button.style.fontFamily = "Arial";
         button.style.fontSize = "15px";
         button.style.cursor = "pointer";
+        // dodajem event listener za klik na button, kad se klikne, reloada se stranica
         button.onclick = function() {
             location.reload();
         };
+        // dodajem button u body
         document.body.appendChild(button);
-        console.log(button);
     }
+    // zovem funkciju za prikaz vremena u svakom updateu canvasa
     displayTime();
 }
 
@@ -302,50 +345,36 @@ function updateGameArea() {
 async function startGame() {
     // pokrećem igru, tj. kreiram canvas i tu se onda definiraju i event listeneri i context i sl.
     asteroidsGame.start();
-    // kreiram zvijezde u pozadini, 1500 komada
+    // kreiram zvijezde u pozadini, 1000 komada
     for (var i = 0; i < 1000; i++) {
         //pozicije zviježda su random, širina i visina su 3px, to mi je najbolje izgledalo
-        // random pozicije kako je zadano i onda se u tom patternu zvijezde ponavljaju kad izađu iz canvasa
+        // random pozicije kako je zadano za sve elemente
         stars.push(new starComponent(starSize, Math.floor(Math.random() * window.innerWidth), Math.floor(Math.random() * window.innerHeight)));
     }
     // kreiram igrača, pozicioniram ga na sredinu canvasa kako je zadano
+    // dajem mu veličinu, boju, poziciju i brzinu, pozicijama oduzimam polovicu veličine igrača kako bih ga centrirao jer je referentna točk u gornjem lijevom kutu
     playerPiece = new playerComponent(playerSize, "red", asteroidsGame.canvas.width / 2 - playerSize / 2, asteroidsGame.canvas.height / 2 - playerSize / 2, playerSpeed);
 
-    // odbrojavanje do početka igre
+    // odbrojavanje do početka igre, želim da baš odmah kod učitavanja stranice krenu letiti asteroidi, neka igrač ima 3 sekunde da se pripremi
     setTimeout(function() {
         ctx.clearRect(0, 0, asteroidsGame.canvas.width, asteroidsGame.canvas.height);
+        // kreiram asteroide, 10 komada inicijalno
         for (var i = 0; i < 10; i++) {
+            // dodajem ih u polje asteroida
             asteroids.push(new asteroidComponent());
         }
         // započinjemo mjerenje vremena
         started = true;
+        // definiram vrijeme početka igre koje mi služi za mjerenje vremena
         startTime = new Date();
     }, 3000);
+    // postavljenjem ovog intervala dodajem novi asteroid svakih 15 sekundi
+    setInterval(function() {
+        // opet dodajem novi asteroid u polje asteroida
+        asteroids.push(new asteroidComponent());
+    }, 15000);
 }
 
-setInterval(function() {
-    asteroids.push(new asteroidComponent());
-}, 10000);
 
-var started = false;
-// funkcija za prikaz vremena u gornjem desnom kutu
-function displayTime() {
-    const currentTime = new Date() - startTime;
-    const minutes = Math.floor(currentTime / 60000);
-    const seconds = ((currentTime % 60000) / 1000).toFixed(3);
-    const formattedTime = `${minutes < 10 ? "0" : ""}${minutes}:${(seconds < 10 ? "0" : "")}${seconds}`;
 
-    const bestTimeMinutes = Math.floor(bestTime / 60000);
-    const bestTimeSeconds = ((bestTime % 60000) / 1000).toFixed(3);
-    const formattedBestTime = `${bestTimeMinutes < 10 ? "0" : ""}${bestTimeMinutes}:${(bestTimeSeconds < 10 ? "0" : "")}${bestTimeSeconds}`;
-    ctx = asteroidsGame.context;
-    ctx.font = "20px Arial";
-    ctx.fillStyle = "white";
-    if (started) {
-        ctx.fillText(`Vrijeme: ${formattedTime}`, asteroidsGame.canvas.width - ctx.measureText("Vrijeme : 00:00.000").width, 30);
-    }
-    else {
-        ctx.fillText(`Vrijeme: 00:00.000`, asteroidsGame.canvas.width - ctx.measureText("Vrijeme : 00:00.000").width, 30);
-    }
-    ctx.fillText(`Najbolje vrijeme: ${formattedBestTime}`, asteroidsGame.canvas.width - ctx.measureText("Najbolje vrijeme : 00:00.000").width, 60);
-}
+
