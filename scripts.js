@@ -1,7 +1,7 @@
 // definicija konstanti veličina za igru
 const playerSize = 40;
 const starSize = 3;
-const playerSpeed = 1.5;
+const playerSpeed = 2;
 
 // varijabla za provjeru je li igra počela nakon učitavanja stranice
 var started = false;
@@ -33,7 +33,7 @@ const asteroidsGame = {
         // ubacujem canvas u body same HTML5 stranice
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         // postavljam interval na 5 milisekundi za update canvasa
-        this.interval = setInterval(updateGameArea, 5);
+        this.interval = setInterval(updateGameArea, 10);
         // dodajemo event listenere za tipke
         // oni su bitni za kretanje igrača, kad ih nebi bilo pritisak na tipku nebi imao nikakav efekt
         // keys polje bilježi koje su tipke pritisnute, a koje nisu, na taj način se igrač može kretati i dijagonalno ako drži dvije tipke jer se kasnije u kodu provjerava koje su tipke pritisnute i po tome se mijenjaju koordinate igrača
@@ -41,7 +41,7 @@ const asteroidsGame = {
             asteroidsGame.keys = (asteroidsGame.keys || []);
             asteroidsGame.keys[e.keyCode] = true;
         });
-        // event listener za keyup, kad se tipka otpusti, postavljam da je false
+        // event listener za keyup, kad se tipka otpusti, postavljam da je ta tipka false
         document.addEventListener("keyup", function (e) {
             asteroidsGame.keys[e.keyCode] = false;
         });
@@ -152,7 +152,7 @@ function starComponent(size, x, y) {
         // iscrtavam pravokutnik na poziciji x, y, širine i visine
         ctx.fillRect(this.x, this.y, this.size, this.size);
     }
-    // funkcija za postavljanje nove pozicije, računa se na način da se y koordinata povećava za 0.35, tj. da se zvijezde spuštaju prema dolje
+    // funkcija za postavljanje nove pozicije, računa se na način da se y koordinata povećava za 0.15, tj. da se zvijezde spuštaju prema dolje
     this.newPos = function () {
         // ako zvijezda dođe do dna canvasa, vraćam ju na vrh na random x poziciju kako se nebo nebi ponavljalo
         if (this.y + this.size > asteroidsGame.canvas.height) {
@@ -171,6 +171,11 @@ function asteroidComponent() {
     // ovi su elementi random, kako je zadano u specifikaciji zadatka, a konkretne implementacije funkcija su u utils.js jer mi je tako bilo preglednije raditi
     this.size = getRandomAsteroidSize();
     this.color = getRandomAsteroidColor();
+    // kako je zadano, različite nijanse sive, random odabir
+    this.randomGrdDirection = Math.floor(Math.random() * 4);
+    // dodajem 2 nijanse sive, random odabir
+    this.randomGrdColor1 = getRandomAsteroidColor();
+    this.randomGrdColor2 = getRandomAsteroidColor()
     var {x, y, speed_x, speed_y} = getAsteroidDirectionAndSpeed();
     this.x = x;
     this.y = y;
@@ -188,7 +193,27 @@ function asteroidComponent() {
         ctx.translate(this.x, this.y);
         // rotiram kontekst canvasa za kut rotacije asteroida
         // crtam asteroid kao pravokutnik
-        ctx.fillStyle = this.color;
+        // različite nijanse sive, kako je zadano u zadatku
+        if (this.randomGrdDirection == 0 && !this.grd) {
+            // gradient od lijevog ruba prema desnom
+            this.grd = ctx.createLinearGradient(0, 0, this.size, 0);
+        }
+        else if (this.randomGrdDirection == 1) {
+            // gradient od gornjeg ruba prema donjem
+            this.grd  = ctx.createLinearGradient(0, 0, 0, this.size);
+        }
+        else if (this.randomGrdDirection == 2) {
+            // gradient od desnog ruba prema lijevom
+            this.grd  = ctx.createLinearGradient(this.size, 0, 0, 0);
+        }
+        else {
+            // gradient od donjeg ruba prema gornjem
+            this.grd = ctx.createLinearGradient(0, this.size, 0, 0);
+        }
+        this.grd.addColorStop(0, this.randomGrdColor1);
+        this.grd.addColorStop(1, this.randomGrdColor2);
+        // bojam pravokutnik
+        ctx.fillStyle = this.grd;
         // dodajem 3D sjenu kako je zadano u zadatku
         ctx.shadowBlur = 20;
         ctx.shadowColor = this.color;
