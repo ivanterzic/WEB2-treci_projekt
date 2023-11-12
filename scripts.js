@@ -202,8 +202,8 @@ function asteroidComponent() {
         this.x += this.speed_x + this.speed_x2;
         this.y += this.speed_y + this.speed_y2;
         // ako asteroid izađe izvan canvasa i 200px sa svake strane, vraćam ga na random poziciju i generiram mu novi smjer kretanja
-        // ovo mi je potrebno jer se asteroidi stvaraju izvan rubova canvasa pa da nemam toleranciju od 201px, tek stvoreni asteroidi bi se odmah vratili na random poziciju i opet bi se stvorili izvan canvasa i tako u krug
-        if (this.x < -this.size - 100 || this.y < -this.size - 100 || this.x > asteroidsGame.canvas.width + this.size + 100 || this.y > asteroidsGame.canvas.height + this.size + 100) {
+        // ovo mi je potrebno jer se asteroidi stvaraju izvan rubova canvasa pa da nemam toleranciju 70px od ruba, tek stvoreni asteroidi bi se odmah vratili na random poziciju i opet bi se stvorili izvan canvasa i tako u krug
+        if (this.x < -this.size - 70 || this.y < -this.size - 70 || this.x > asteroidsGame.canvas.width + this.size + 70 || this.y > asteroidsGame.canvas.height + this.size + 70) {
             // generiram random smjer kretanja asteroida, kao kod incijalizacije
             var {x, y, speed_x, speed_y} = getAsteroidDirectionAndSpeed();
             this.x = x;
@@ -358,8 +358,12 @@ async function startGame() {
     // odbrojavanje do početka igre, želim da baš odmah kod učitavanja stranice krenu letiti asteroidi, neka igrač ima 3 sekunde da se pripremi
     setTimeout(function() {
         ctx.clearRect(0, 0, asteroidsGame.canvas.width, asteroidsGame.canvas.height);
-        // kreiram asteroide, 10 komada inicijalno
-        for (var i = 0; i < 10; i++) {
+
+        // obzirom da se igra može igrati na ekranima različite veličine, broj asteroida ovisi o veličini ekrana, ovo je formula koja mi se činila najbolja
+        // nebi bilo dobro da je isti broj na većem i manjem ekranu pa sam odredio broj po površini ekrana
+        let numOfAsteroids = (asteroidsGame.canvas.width * asteroidsGame.canvas.height) / 80000;
+        // kreiram asteroide, numOfAsteroids komada inicijalno
+        for (var i = 0; i < numOfAsteroids; i++) {
             // dodajem ih u polje asteroida
             asteroids.push(new asteroidComponent());
         }
