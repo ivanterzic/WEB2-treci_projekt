@@ -249,7 +249,10 @@ function checkCollision() {
     for (let i = 0; i < asteroids.length ; ++i){
         // ako je udaljenost između središta asteroida i igrača manja od polovice zbroja njihovih dimenzija, znači da se preklapaju
         // to je pitagorin poučak, udaljenost između dvije točke je kvadratni korijen zbroja kvadrata razlike njihovih koordinata
-        if (Math.sqrt(Math.pow(asteroids[i].x - playerPiece.x, 2) + Math.pow(asteroids[i].y - playerPiece.y, 2)) < (asteroids[i].size + playerPiece.size) / 2) {
+        var dx = playerPiece.x - asteroids[i].x;
+        var dy = playerPiece.y - asteroids[i].y;
+        var distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < playerPiece.size / 2 + asteroids[i].size / 2) {
             // ako se preklapaju, vraćam true
             return true;
         }
