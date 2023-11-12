@@ -1,7 +1,7 @@
 // definicija konstanti veličina za igru
 const playerSize = 40;
 const starSize = 3;
-const playerSpeed = 2;
+const playerSpeed = 3;
 
 // varijabla za provjeru je li igra počela nakon učitavanja stranice
 var started = false;
